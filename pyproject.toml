@@ -1,0 +1,32 @@
+[tool.ruff]
+line-length = 120
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "S",  # flake8-bandit
+    "DJ",  # flake8-django 
+    "Q",  # flake8-quotes
+    "UP",  # pyupgrade
+]
+# extend-exclude = ["migrations", "tests"]
+
+[tool.poetry]
+name = "new-admin-panel-sprint-3"
+version = "0.1.0"
+description = ""
+authors = ["Andrey Nikitsich <andrey.nikitsich@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+psycopg = "^3.1.16"
+pydantic-settings = "^2.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
