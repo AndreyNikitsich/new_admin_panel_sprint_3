@@ -3,8 +3,6 @@ from typing import Any
 from storages.base_storage import BaseStorage
 
 
-
-
 class State:
     """Класс для работы с состояниями."""
 
