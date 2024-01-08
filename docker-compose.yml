@@ -1,0 +1,12 @@
+version: "3"
+services:
+  elastic:
+    image: elasticsearch:8.6.2
+    expose:
+      - 9200
+    ports:
+      - "9200:9200"
+    environment:
+      - "discovery.type=single-node"
+      - "xpack.security.enabled=false"
+      - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"

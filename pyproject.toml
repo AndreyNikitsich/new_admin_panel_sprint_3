@@ -5,12 +5,13 @@ select = [
     "W",  # pycodestyle warnings
     "F",  # pyflakes
     "I",  # isort
-    "C",  # flake8-comprehensions
+    "C4",  # flake8-comprehensions
     "B",  # flake8-bugbear
     "S",  # flake8-bandit
-    "DJ",  # flake8-django 
     "Q",  # flake8-quotes
     "UP",  # pyupgrade
+    "N",  # pep8-naming
+    "T10",  # flake8-debugger
 ]
 
 [tool.poetry]
@@ -24,6 +25,7 @@ readme = "README.md"
 python = "^3.11"
 psycopg = "^3.1.16"
 pydantic-settings = "^2.1.0"
+elasticsearch = "^8.11.1"
 
 
 [tool.poetry.group.develop.dependencies]
