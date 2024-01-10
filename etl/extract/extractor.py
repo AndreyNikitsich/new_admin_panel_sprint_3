@@ -1,14 +1,19 @@
+import logging
 from typing import Generator, Type
 from uuid import UUID
 
+import backoff
 import psycopg
 from psycopg.rows import class_row
 
+from settings import settings
 from states.state import State
 
 from .models import Batch, FilmRow
 from .query_builders import _build_load_film_info_query
 from .table_watchers import AbstractUpdatesWatcher, FilmWorkUpdatesWatcher, GenreUpdatesWatcher, PersonUpdatesWatcher
+
+logger = logging.getLogger(__name__)
 
 
 class Extractor:
@@ -38,6 +43,7 @@ class Extractor:
             data = cur.fetchall()
         return data
 
+    @backoff.on_exception(backoff.expo, psycopg.OperationalError, max_time=settings.others.postgres_backoff_max_time)
     def extract_films_batch(self, batch_size: int = 100) -> Generator[Batch, None, None]:
         film_ids = self._get_film_ids_for_update()
         for batch in range(0, len(film_ids), batch_size):
@@ -45,6 +51,6 @@ class Extractor:
             yield self._load_films_info(ids_batch)
 
     @classmethod
-    def get_object(cls, conn: psycopg.Connection, state: State):
+    def get_object(cls, conn: psycopg.Connection, state: State) -> "Extractor":
         table_watcher_classes = [PersonUpdatesWatcher, GenreUpdatesWatcher, FilmWorkUpdatesWatcher]
         return Extractor(conn, state, table_watcher_classes)

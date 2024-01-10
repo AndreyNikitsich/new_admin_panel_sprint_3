@@ -1,9 +1,11 @@
 import json
+import logging
 
 from elasticsearch import BadRequestError, Elasticsearch
 
 from settings import settings
 
+logger = logging.getLogger("elastic_init")
 resource_already_exists_msg = "resource_already_exists_exception"
 
 if __name__ == "__main__":
@@ -14,6 +16,8 @@ if __name__ == "__main__":
         client.indices.create(
             index=settings.elastic.index_name, settings=index_config["settings"], mappings=index_config["mappings"]
         )
+        logger.info("Index %s successfully created", settings.elastic.index_name)
     except BadRequestError as e:
         if e.message != resource_already_exists_msg:
             raise e
+        logger.info("Index %s already exists", settings.elastic.index_name)

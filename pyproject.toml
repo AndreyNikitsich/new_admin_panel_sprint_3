@@ -29,6 +29,7 @@ python = "^3.11"
 psycopg = "^3.1.16"
 pydantic-settings = "^2.1.0"
 elasticsearch = "^8.11.1"
+backoff = "^2.2.1"
 
 
 [tool.poetry.group.develop.dependencies]

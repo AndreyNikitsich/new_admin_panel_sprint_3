@@ -1,5 +1,12 @@
-from elasticsearch import Elasticsearch, helpers
+import logging
+
+import backoff
+from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, helpers
 from pydantic import BaseModel
+
+from settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ElasticLoader:
@@ -7,6 +14,9 @@ class ElasticLoader:
         self._client = client
         self._index_name = index_name
 
+    @backoff.on_exception(
+        backoff.expo, (ConnectionError, ConnectionTimeout), max_time=settings.others.elastic_backoff_max_time
+    )
     def load(self, data: list[BaseModel]):
         actions = (
             {
@@ -16,4 +26,5 @@ class ElasticLoader:
             }
             for i in data
         )
-        helpers.bulk(self._client, actions)
+        result = helpers.bulk(self._client, actions)
+        logger.debug("Rows was loaded to Elasticsearch: %s", result[0])
