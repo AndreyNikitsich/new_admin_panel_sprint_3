@@ -16,7 +16,7 @@ services:
       - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"
 
   redis:
-    image: artifactory.lstprod.net/diops-docker/redis:7.2.0  # TODO: change to redis from dockerhub
+    image: redis:7.2.0
     expose:
       - 6379
     ports:
@@ -35,6 +35,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file: .env
 
 
 networks:
