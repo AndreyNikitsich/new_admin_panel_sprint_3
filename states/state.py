@@ -21,7 +21,7 @@ class State:
         uncommitted_keys = [key for key in self._state.keys() if key.startswith(self.uncommitted_prefix)]
         for key in uncommitted_keys:
             value = self._state[key]
-            new_key = key[len(self.uncommitted_prefix) :]
+            new_key = key[len(self.uncommitted_prefix):]
             self._state[new_key] = value
             del self._state[key]
         self.storage.save_state(self._state)
