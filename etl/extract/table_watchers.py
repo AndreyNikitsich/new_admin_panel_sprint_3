@@ -16,8 +16,7 @@ class AbstractUpdatesWatcher(abc.ABC):
     time_stamp_key = None
     id_key = None
 
-    def __init__(self, conn: psycopg.Connection, state: State):
-        self._conn = conn
+    def __init__(self, state: State):
         self._state = state
 
         if None in [self.table_name, self.time_stamp_key, self.id_key]:
@@ -26,7 +25,7 @@ class AbstractUpdatesWatcher(abc.ABC):
     def _update_state(self, last_timestamp, last_id) -> None:
         self._state.set_state_bulk({self.time_stamp_key: last_timestamp, self.id_key: last_id}, uncommitted=True)
 
-    def get_films_for_update(self) -> list[UUID]:
+    def get_films_for_update(self, conn: psycopg.Connection) -> list[UUID]:
         prev_processed_timestamp = self._state.get_state(self.time_stamp_key)
         prev_processed_id = self._state.get_state(self.id_key)
 
@@ -34,18 +33,19 @@ class AbstractUpdatesWatcher(abc.ABC):
         uncommitted_id = self._state.get_state(State.uncommitted_prefix + self.id_key)
 
         ids, latest_timestamp, latest_id = self._load_updated_ids(
-            self.table_name, prev_processed_timestamp, prev_processed_id, uncommitted_timestamp, uncommitted_id
+            conn, self.table_name, prev_processed_timestamp, prev_processed_id, uncommitted_timestamp, uncommitted_id
         )
 
         if not ids:
             return []
 
         self._update_state(latest_timestamp, latest_id)
-        film_ids = self._get_linked_film_ids(ids)
+        film_ids = self._get_linked_film_ids(conn, ids)
         return film_ids
 
     def _load_updated_ids(
         self,
+        conn: psycopg.Connection,
         table_name: str,
         prev_processed_timestamp: Optional[datetime] = None,
         prev_processed_id: Optional[str] = None,
@@ -55,7 +55,7 @@ class AbstractUpdatesWatcher(abc.ABC):
         query = _build_load_updated_ids_query(
             table_name, prev_processed_timestamp, prev_processed_id, uncommitted_timestamp, uncommitted_id
         )
-        with self._conn.cursor(row_factory=dict_row) as cur:
+        with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(query)
             results = cur.fetchone()
 
@@ -65,9 +65,9 @@ class AbstractUpdatesWatcher(abc.ABC):
 
         return ids, latest_timestamp, latest_id
 
-    def _get_linked_film_ids(self, ids: list[UUID]) -> list[UUID]:
+    def _get_linked_film_ids(self, conn: psycopg.Connection, ids: list[UUID]) -> list[UUID]:
         query = _build_load_linked_film_ids_query(self.table_name, len(ids))
-        with self._conn.cursor() as cur:
+        with conn.cursor() as cur:
             cur.execute(query, ids)
             results = cur.fetchall()
         results = [i[0] for i in results]
@@ -91,5 +91,5 @@ class FilmWorkUpdatesWatcher(AbstractUpdatesWatcher):
     time_stamp_key = "last_processed_film_work_timestamp"
     id_key = "last_processed_film_work_id"
 
-    def _get_linked_film_ids(self, ids: list[UUID]) -> list[UUID]:
+    def _get_linked_film_ids(self, conn: psycopg.Connection, ids: list[UUID]) -> list[UUID]:
         return ids

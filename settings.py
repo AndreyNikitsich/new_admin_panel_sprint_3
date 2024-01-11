@@ -78,6 +78,10 @@ LOGGING_CONFIG: Dict = {
             "handlers": ["stdout"],
             "level": settings.others.logging_level,
         },
+        "etl": {
+            "handlers": ["stdout"],
+            "level": settings.others.logging_level,
+        },
         "elastic_init": {
             "handlers": ["stdout"],
             "level": settings.others.logging_level,

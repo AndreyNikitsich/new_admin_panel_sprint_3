@@ -1,5 +1,5 @@
 import logging
-from typing import Generator, Type
+from typing import Any, Generator, Type
 from uuid import UUID
 
 import backoff
@@ -19,21 +19,24 @@ logger = logging.getLogger(__name__)
 class Extractor:
     def __init__(
         self,
-        conn: psycopg.Connection,
+        connection_info: dict[str, Any],
         state: State,
         table_watcher_classes: list[Type[AbstractUpdatesWatcher]] | None = None,
     ):
-        self._conn = conn
+        self._connection_info = connection_info
+        self._conn = None
         self._state = state
         self._watcher_objects = []
 
         if table_watcher_classes is not None:
-            self._watcher_objects = [tw_class(self._conn, self._state) for tw_class in table_watcher_classes]
+            self._watcher_objects = [tw_class(self._state) for tw_class in table_watcher_classes]
+
+        self._connect()
 
     def _get_film_ids_for_update(self) -> list[UUID]:
         unique_film_ids = set()
         for watcher in self._watcher_objects:
-            unique_film_ids.update(watcher.get_films_for_update())
+            unique_film_ids.update(watcher.get_films_for_update(self._conn))
         return sorted(unique_film_ids)
 
     def _load_films_info(self, ids: list[UUID]) -> Batch:
@@ -43,14 +46,27 @@ class Extractor:
             data = cur.fetchall()
         return data
 
-    @backoff.on_exception(backoff.expo, psycopg.OperationalError, max_time=settings.others.postgres_backoff_max_time)
     def extract_films_batch(self, batch_size: int = 100) -> Generator[Batch, None, None]:
-        film_ids = self._get_film_ids_for_update()
-        for batch in range(0, len(film_ids), batch_size):
-            ids_batch = list(film_ids[batch : batch + batch_size])
-            yield self._load_films_info(ids_batch)
+        try:
+            film_ids = self._get_film_ids_for_update()
+            for batch in range(0, len(film_ids), batch_size):
+                ids_batch = list(film_ids[batch : batch + batch_size])
+                yield self._load_films_info(ids_batch)
+        except psycopg.OperationalError:
+            self._connect()
+
+    @backoff.on_exception(backoff.expo, psycopg.OperationalError, max_time=settings.others.postgres_backoff_max_time)
+    def _connect(self):
+        if self._conn is not None:
+            self._conn.close()
+            self._conn = None
+        self._conn = psycopg.connect(**self._connection_info)
+
+    def __del__(self) -> None:
+        if self._conn is not None:
+            self._conn.close()
 
     @classmethod
-    def get_object(cls, conn: psycopg.Connection, state: State) -> "Extractor":
+    def get_object(cls, state: State) -> "Extractor":
         table_watcher_classes = [PersonUpdatesWatcher, GenreUpdatesWatcher, FilmWorkUpdatesWatcher]
-        return Extractor(conn, state, table_watcher_classes)
+        return Extractor(settings.postgres.model_dump(), state, table_watcher_classes)

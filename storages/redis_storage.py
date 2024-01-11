@@ -1,7 +1,8 @@
 from typing import Any, Dict
 
-from .base_storage import BaseStorage
 import redis
+
+from .base_storage import BaseStorage
 
 
 class RedisStorage(BaseStorage):

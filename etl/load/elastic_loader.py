@@ -28,3 +28,9 @@ class ElasticLoader:
         )
         result = helpers.bulk(self._client, actions)
         logger.debug("Rows was loaded to Elasticsearch: %s", result[0])
+
+    @classmethod
+    def get_object(cls) -> "ElasticLoader":
+        elastic_client = Elasticsearch(settings.elastic.url)
+        return ElasticLoader(elastic_client, settings.elastic.index_name)
+
