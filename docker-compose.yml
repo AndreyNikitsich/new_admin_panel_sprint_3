@@ -27,7 +27,7 @@ services:
       timeout: 2s
       retries: 5
 
-  backend:
+  etl:
     build:
       context: .
     depends_on:
@@ -40,5 +40,4 @@ services:
 
 networks:
   default:
-      name: movies_admin
-      external: true
+      name: movies

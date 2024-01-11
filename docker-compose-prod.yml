@@ -1,0 +1,39 @@
+version: "3"
+services:
+  elastic:
+    image: elasticsearch:8.6.2
+    expose:
+      - 9200
+    healthcheck:
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:9200/
+      interval: 10s
+      retries: 80
+    environment:
+      - "discovery.type=single-node"
+      - "xpack.security.enabled=false"
+      - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"
+
+  redis:
+    image: redis:7.2.0
+    expose:
+      - 6379
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 1s
+      timeout: 2s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+    depends_on:
+      elastic:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+
+
+networks:
+  default:
+      name: movies
