@@ -36,6 +36,12 @@ class ElasticSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="ELASTIC_")
 
+class RedisSettings(BaseSettings):
+    host: str = "redis"
+    port: int = 6379
+
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="REDIS_")
+
 
 class OthersSettings(BaseSettings):
     etl_sleep_seconds: float = 5
@@ -48,6 +54,7 @@ class OthersSettings(BaseSettings):
 class Settings(BaseSettings):
     postgres: PostgresSettings = PostgresSettings()
     elastic: ElasticSettings = ElasticSettings()
+    redis: RedisSettings = RedisSettings()
     others: OthersSettings = OthersSettings()
 
 

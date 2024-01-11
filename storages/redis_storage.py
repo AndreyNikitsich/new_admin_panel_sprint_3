@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, Dict
 
 import redis
@@ -12,7 +13,11 @@ class RedisStorage(BaseStorage):
         self._client = redis_client
 
     def save_state(self, state: Dict[str, Any]) -> None:
-        self._client.hset(self._state_key, mapping=state)
+        encoded_state = {}
+        for key, value in state.items():
+            if isinstance(value, (datetime.datetime, datetime.date)):
+                encoded_state[key] = value.isoformat()
+        self._client.hset(self._state_key, mapping=encoded_state)
 
     def retrieve_state(self) -> Dict[str, Any]:
         state = self._client.hgetall(self._state_key)
